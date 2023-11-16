@@ -1,0 +1,102 @@
+---
+title: "Comparisons between patients and controls, and between disease groups for the four modalities"
+output: html_notebook
+---
+
+```{r}
+# Load required libraries
+library(car)
+
+# Set the path to the data file
+data.spreadsh <- "data_source/degree.csv"
+
+# Read the data file
+degree <- read.csv(data.spreadsh, header = TRUE)
+
+###1) Weighted degree
+
+###degree by region for patients v controls
+lapply(degree[,7:85], function(x) {summary(lm(x~Group2+Age_at_fmri+Sex+dvars_mean, data=degree))$coefficients[2,3:4]}) -> degree_test
+do.call(rbind.data.frame,degree_test) -> degree_test2
+names(degree_test) -> rownames(degree_test2)
+colnames(degree_test2) <- c("tval", "pval")
+p.adjust(degree_test2$pval, method="fdr") -> degree_test2$adj.pval
+
+###comparison between patient groups
+lapply(subset(degree, !Group2=="Control")[,7:85], function(x) {car::Anova(lm(x~Group+Age_at_fmri+Sex+dvars_mean, data=subset(degree, !Group2=="Control")))[1,3:4]}) -> degree_test3
+do.call(rbind.data.frame,degree_test3) -> degree_test3
+p.adjust(degree_test3$`Pr(>F)`, method="fdr") -> degree_test3$fdr_p
+
+```
+
+```{r}
+###2) UCB-J
+
+# Set the path to the data file
+data.spreadsh <- "data_source/ucbj.csv"
+
+# Read the data file
+ucbj <- read.csv(data.spreadsh, header = TRUE)
+
+####group differences in UCBJ
+lapply(ucbj[,6:84], function(x) {summary(lm(x~Group2+Age_at_fmri+Sex, data=ucbj))$coefficients[2,3:4]}) -> ucbj_test
+do.call(rbind.data.frame,ucbj_test) -> ucbj_test2
+names(ucbj_test) -> rownames(ucbj_test2)
+colnames(ucbj_test2) <- c("tval", "pval")
+p.adjust(ucbj_test2$pval, method="fdr") -> ucbj_test2$adj.pval
+
+###differences between disease groups
+lapply(subset(ucbj, !Group=="Control")[,6:84], function(x) {car::Anova(lm(x~Group+Age_at_fmri+Sex, data=subset(ucbj, !Group=="Control")))[1,3:4]}) -> ucbj_test3
+do.call(rbind.data.frame,ucbj_test3) -> ucbj_test3
+p.adjust(ucbj_test3$`Pr(>F)`, method="fdr") -> ucbj_test3$fdr_p
+```
+
+```{r}
+
+###3) GM and brainstem total intracranial volumes
+
+# Set the path to the data file
+data.spreadsh <- "data_source/gm.csv"
+
+# Read the data file
+gm <- read.csv(data.spreadsh, header = TRUE)
+
+####group differences in GM for patients v controls
+lapply(gm[,8:86], function(x) {summary(lm(x~Group2+Age_at_fmri+Sex+samseg_tiv, data=gm))$coefficients[2,3:4]}) -> gm_test
+do.call(rbind.data.frame,gm_test) -> gm_test2
+names(gm_test) -> rownames(gm_test2)
+colnames(gm_test2) <- c("tval", "pval")
+p.adjust(gm_test2$pval, method="fdr") -> gm_test2$adj.pval
+
+####group differences in gm between disease groups
+lapply(subset(gm, !Group=="Control")[,8:86], function(x) {car::Anova(lm(x~Group+Age_at_fmri+Sex+samseg_tiv, data=subset(gm, !Group=="Control")))[1,3:4]}) -> gm_test3
+do.call(rbind.data.frame,gm_test3) -> gm_test3
+colnames(gm_test3) <- c("tval", "pval")
+p.adjust(gm_test3$pval, method="fdr") -> gm_test3$adj.pval
+
+```
+
+```{r}
+##4) ODI
+
+# Set the path to the data file
+data.spreadsh <- "data_source/odi.csv"
+
+# Read the data file
+odi<- read.csv(data.spreadsh, header = TRUE)
+
+##comparison in ODI between patient and control groups
+lapply(odi[,6:84], function(x) {summary(lm(x~Group2+Age_at_fmri+Sex, data=odi))$coefficients[2,3:4]}) -> odi_test
+do.call(rbind.data.frame,odi_test) -> odi_test2
+names(odi_test) -> rownames(odi_test2)
+colnames(odi_test2) <- c("tval", "pval")
+p.adjust(odi_test2$pval, method="fdr") -> odi_test2$adj.pval
+
+###differences in ODI between disease groups
+lapply(subset(odi, !Group=="Control")[,6:84], function(x) {car::Anova(lm(x~Group+Age_at_fmri+Sex, data=subset(odi, !Group=="Control")))[1,3:4]}) -> odi_test3
+do.call(rbind.data.frame,odi_test3) -> odi_test3
+p.adjust(odi_test3$`Pr(>F)`, method="fdr") -> odi_test3$fdr_p
+
+
+```
+

@@ -1,0 +1,61 @@
+---
+title: "Mixed effects models"
+output: html_notebook
+---
+
+```{r}
+library(lme4)
+library(lmerTest)
+
+##import list of regional values by modality
+data.spreadsh = "data_source/graph_metrics.csv"
+combined_file <- read.csv(data.spreadsh, header = TRUE)
+
+####mixed linear effects models of relationship between ucbj and degree
+mod=lmer(scale(degree) ~ scale(ucbj) +scale(Age_at_fmri) +scale(dvars_mean) +scale(cortical) +scale(Sex)+ (1 | SubID) +(ucbj|| region), data=subset(combined_file, !Group=="Control"))
+
+##comparing with model without slope for ucbj in region
+mod1=lmer(scale(degree) ~ scale(ucbj) +scale(Age_at_fmri) +scale(dvars_mean)+scale(cortical) +scale(Sex)+ (1 | SubID) +(1| region), data=subset(combined_file, !Group=="Control"))
+anova(mod, mod1)
+
+###for controls
+mod=lmer(scale(degree) ~ scale(ucbj) +scale(Age_at_fmri) +scale(dvars_mean) +scale(cortical) +scale(Sex)+ (1 | SubID) +(ucbj|| region), data=subset(combined_file, Group=="Control"))
+
+##testing for differences between controls and patients
+combined_file$Group2 <- ifelse(combined_file$Group=="Control", 0, 1)
+mod=lmer(scale(degree) ~ scale(ucbj)*Group2 +cortical*Group2 +scale(Age_at_fmri) +scale(dvars_mean)  +Sex+ (1 | SubID) +(ucbj|| region), data=subset(combined_file))
+
+##including scanning interval as a covariate
+mod=lmer(scale(degree) ~ scale(ucbj)*Group2 +cortical*Group2 +scale(Age_at_fmri) +scale(diff) +scale(dvars_mean)  +Sex+ (1 | SubID) +(ucbj|| region), data=subset(combined_file))
+
+##including grey matter in the model
+mod=lmer(scale(degree) ~ scale(ucbj) +scale(gm) +scale(Age_at_fmri) +scale(dvars_mean) +scale(cortical) +scale(Sex)+ (1 | SubID) +(ucbj|| region), data=subset(combined_file, !Group=="Control"))
+
+##by each individual syndrome
+mod=lmer(scale(degree) ~ scale(ucbj) +scale(Age_at_fmri) +scale(dvars_mean) +scale(cortical) +scale(Sex)+ (1 | SubID) +(1| region), data=subset(combined_file, Group=="bvFTD"))
+mod=lmer(scale(degree) ~ scale(ucbj) +scale(Age_at_fmri) +scale(dvars_mean) +scale(cortical) +scale(Sex)+ (1 | SubID) +(1| region), data=subset(combined_file, Group=="CBS"))
+mod=lmer(scale(degree) ~ scale(ucbj) +scale(Age_at_fmri) +scale(dvars_mean) +scale(cortical) +scale(Sex)+ (1 | SubID) +(1| region), data=subset(combined_file, Group=="PSP"))
+
+
+
+##incorporating ODI for participants with noddi (n=75)
+###ODI v ucb-j for patients
+mod=lmer(scale(noddi) ~ scale(ucbj) +scale(Age_at_fmri) +scale(Sex)  +scale(cortical) + (1 | SubID) +(ucbj || region), data=subset(combined_file, !Group=="Control"))
+
+##repeated for controls - note singular fit for ucbj in region
+mod=lmer(scale(noddi) ~ scale(ucbj) +scale(Age_at_fmri) +scale(Sex)  +scale(cortical) + (1 | SubID) +(1 | region), data=subset(combined_file, Group=="Control"))
+
+##comparing weighted degree to ODI in patients
+mod=lmer(scale(degree) ~ scale(noddi) +scale(Age_at_fmri) +scale(dvars_mean) +scale(cortical) +scale(Sex)+ (1 | SubID) +(noddi|| region), data=subset(combined_file, !Group=="Control"))
+
+##including grey matter volumes
+mod=lmer(scale(degree) ~ scale(noddi) +scale(gm) +scale(Age_at_fmri) +scale(dvars_mean) +scale(cortical) +scale(Sex)+ (1 | SubID) +(noddi|| region), data=subset(combined_file, !Group=="Control"))
+
+##repeat in controls and testing for differences for controls v patients
+mod=lmer(scale(degree) ~ scale(noddi) +scale(Age_at_fmri) +scale(dvars_mean) +scale(cortical) + scale(Sex)+ (1 | SubID) +(noddi|| region), data=subset(combined_file, Group=="Control"))
+mod=lmer(scale(degree) ~ scale(noddi)*Group2 +scale(Age_at_fmri) +scale(dvars_mean) +cortical*Group2 +scale(Sex)+ (1 | SubID) +(noddi|| region), data=subset(combined_file))
+
+
+
+```
+

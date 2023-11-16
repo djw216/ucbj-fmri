@@ -1,0 +1,35 @@
+---
+title: "Mixed effects models for non reparcellated Hammers Atlas"
+output: html_notebook
+editor_options: 
+  chunk_output_type: inline
+---
+
+```{r}
+library(lme4)
+library(lmerTest)
+
+##import list of regional values by modality
+data.spreadsh = "data_source/graph_metrics_full.csv"
+combined_file <- read.csv(data.spreadsh, header = TRUE)
+
+####mixed linear effects models of relationship between ucbj and degree
+mod=lmer(scale(degree) ~ scale(ucbj) +scale(Age_at_fmri) +scale(dvars_mean) +scale(cortical) +scale(Sex)+ (1 | SubID) +(ucbj|| region), data=subset(combined_file, !Group=="Control"))
+
+
+###for controls
+mod=lmer(scale(degree) ~ scale(ucbj) +scale(Age_at_fmri) +scale(dvars_mean) +scale(cortical) +scale(Sex)+ (1 | SubID) +(ucbj|| region), data=subset(combined_file, Group=="Control"))
+
+##testing for differences between controls and patients
+combined_file$Group2 <- ifelse(combined_file$Group=="Control", 0, 1)
+mod=lmer(scale(degree) ~ scale(ucbj)*Group2 +cortical*Group2 +scale(Age_at_fmri) +scale(dvars_mean)  +Sex+ (1 | SubID) +(ucbj|| region), data=subset(combined_file))
+
+
+
+##by each individual syndrome
+mod=lmer(scale(degree) ~ scale(ucbj) +scale(Age_at_fmri) +scale(dvars_mean) +scale(cortical) +scale(Sex)+ (1 | SubID) +(1| region), data=subset(combined_file, Group=="bvFTD"))
+mod=lmer(scale(degree) ~ scale(ucbj) +scale(Age_at_fmri) +scale(dvars_mean) +scale(cortical) +scale(Sex)+ (1 | SubID) +(1| region), data=subset(combined_file, Group=="CBS"))
+mod=lmer(scale(degree) ~ scale(ucbj) +scale(Age_at_fmri) +scale(dvars_mean) +scale(cortical) +scale(Sex)+ (1 | SubID) +(1| region), data=subset(combined_file, Group=="PSP"))
+
+```
+

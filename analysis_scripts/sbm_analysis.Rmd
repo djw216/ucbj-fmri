@@ -1,0 +1,314 @@
+---
+title: "SBM Analysis"
+output: html_notebook
+editor_options: 
+  chunk_output_type: inline
+---
+
+
+```{r}
+library(ggplot2)
+library(dplyr)
+library(ggsignif)
+library(ggeffects)
+library(car)
+library(outliers)
+library(broom)
+
+##import csv of components loadings and patient data
+data.spreadsh <- "data_source/data_source_sbm.csv"
+components <- read.csv(data.spreadsh, header = TRUE)
+
+
+## Create a list to store the results
+results_list <- list()
+
+## Loop over each component to compare between all groups
+for (i in 1:7) {
+  formula <- paste("loadings_ucbj_", i, "~ Group + Age_at_fmri + Sex", sep="")
+  mod <- lm(formula, data = components)
+  anova_result <- car::Anova(mod)
+  
+  # Store the results in the list
+  results_list[[i]] <- tidy(anova_result)
+}
+
+
+##fdr adjusted p values
+p_values <- c(8.136e-12, 4.174e-07, 8.551e-07, 1.473e-05, 0.001337, 7.503e-07, 0.57101)
+fdr_adjusted_p_values <- p.adjust(p_values, method = "fdr")
+
+
+##pairwise results:
+analyze_component <- function(data, component_num) {
+  component_name <- paste0("loadings_ucbj_", component_num)
+  formula <- paste(component_name, "~ Group + Age_at_fmri + Sex", sep="")
+  mod <- lm(formula, data = data)
+  
+  # Perform Anova
+  anova_result <- car::Anova(mod)
+  print(anova_result)
+  
+  # Perform pairwise comparisons
+  pairwise_result <- emmeans::emmeans(mod, list(pairwise ~ Group), adjust = "tukey")
+  print(pairwise_result)
+return(list(anova_result = tidy(anova_result), pairwise_result = pairwise_result))
+}
+
+results_list <- list()
+for (component_num in 1:6) {
+  results_list[[component_num]] <- analyze_component(components, component_num)
+}
+
+##boxplots for components of interest
+#component 1
+ggplot(data=components, aes(x=factor(Group, level=c("Control", "bvFTD", "CBS", "PSP")), y=loadings_ucbj_1))+geom_boxplot(aes(fill=Group))+ylab("UCBJ Component 1 synaptic density") +theme_light(base_size=24)+theme(plot.background = element_blank(), panel.grid = element_blank(), legend.position = "none") +geom_signif(y_position = c(0.34), xmin=c(0.8), xmax=c(2.2), annotations = c("***")) +geom_signif(y_position = c(0.32), xmin=c(0.8), xmax=c(3.2), annotations = c("**")) +geom_signif(y_position = c(0.3), xmin=c(0.8), xmax=c(4.2), annotations = c("***")) +xlab("Group")
+
+#component 2
+ggplot(data=components, aes(x=factor(Group, level=c("Control", "bvFTD", "CBS", "PSP")), y=loadings_ucbj_2))+geom_boxplot(aes(fill=Group))+ylab("UCBJ Component 2 synaptic density") +theme_light(base_size=24)+theme(plot.background = element_blank(), panel.grid = element_blank(), legend.position = "none") +geom_signif(y_position = c(0.1), xmin=c(0.8), xmax=c(3.2), annotations = c("*")) +geom_signif(y_position = c(0.12), xmin=c(0.8), xmax=c(2.2), annotations = c("*")) +xlab("Group")+geom_signif(y_position = c(0.14), xmin=c(1.8), xmax=c(4.2), annotations = c("*"))+geom_signif(y_position = c(0.16), xmin=c(2.8), xmax=c(4.2), annotations = c("*")) 
+
+#component 3
+ggplot(data=components, aes(x=factor(Group, level=c("Control", "bvFTD", "CBS", "PSP")), y=loadings_ucbj_3))+geom_boxplot(aes(fill=Group))+ylab("UCBJ Component 3 synaptic density") +theme_light(base_size=24)+theme(plot.background = element_blank(), panel.grid = element_blank(), legend.position = "none") +geom_signif(y_position = c(0.2), xmin=c(0.8), xmax=c(2.2), annotations = c("***")) + geom_signif(y_position = c(0.22), xmin=c(1.8), xmax=c(4.2), annotations = c("*")) + geom_signif(y_position = c(0.24), xmin=c(1.8), xmax=c(3.2), annotations = c("**"))+ geom_signif(y_position = c(0.26), xmin=c(0.8), xmax=c(4.2), annotations = c("**")) +xlab("Group")
+
+##component 4
+ggplot(data=components, aes(x=factor(Group, level=c("Control", "bvFTD", "CBS", "PSP")), y=loadings_ucbj_4))+geom_boxplot(aes(fill=Group))+ylab("UCBJ Component 4 synaptic density") +theme_light(base_size=24)+theme(plot.background = element_blank(), panel.grid = element_blank(), legend.position = "none") +geom_signif(y_position = c(0.12), xmin=c(0.8), xmax=c(2.2), annotations = c("***")) + geom_signif(y_position = c(0.16), xmin=c(1.8), xmax=c(4.2), annotations = c("***")) + geom_signif(y_position = c(0.14), xmin=c(1.8), xmax=c(3.2), annotations = c("***"))+ geom_signif(y_position = c(0.18), xmin=c(0.8), xmax=c(4.2), annotations = c("**")) +xlab("Group")
+
+#component 5
+ggplot(data=components, aes(x=factor(Group, level=c("Control", "bvFTD", "CBS", "PSP")), y=loadings_ucbj_5))+geom_boxplot(aes(fill=Group))+ylab("UCBJ Component 5 synaptic density") +theme_light(base_size=24)+theme(plot.background = element_blank(), panel.grid = element_blank(), legend.position = "none") +geom_signif(y_position = c(0.16), xmin=c(0.8), xmax=c(2.2), annotations = c("***")) + geom_signif(y_position = c(0.14), xmin=c(1.8), xmax=c(3.2), annotations = c("*"))+ geom_signif(y_position = c(0.12), xmin=c(0.8), xmax=c(4.2), annotations = c("**")) +xlab("Group")
+
+#component 6
+ggplot(data=components, aes(x=factor(Group, level=c("Control", "bvFTD", "CBS", "PSP")), y=loadings_ucbj_6))+geom_boxplot(aes(fill=Group))+ylab("UCBJ Component 6 synaptic density") +theme_light(base_size=24)+theme(plot.background = element_blank(), panel.grid = element_blank(), legend.position="none") +geom_signif(y_position = c(0.14), xmin=c(0.8), xmax=c(2.2), annotations = c("***")) +geom_signif(y_position = c(0.1), xmin=c(0.8), xmax=c(4.2), annotations = c("***"))+geom_signif(y_position = c(0.12), xmin=c(0.8), xmax=c(3.2), annotations = c("**"))  +xlab("Group")
+
+
+#######functional component scores v ucbj######
+
+# Function to perform the linear regression and plot the results for a given component
+analyse_component_regression <- function(data, component_num) {
+  component_name <- paste0("component", component_num,sep="")
+  loadings_name <- paste0("loadings_ucbj_", component_num, sep="")
+  formula <- paste("scale(", component_name, ") ~ scale(", loadings_name, ") + scale(Age_at_fmri) + scale(dvars_mean) + scale(Sex)")
+  mod <- lm(formula, data = data)
+
+  # Print summary
+  print(summary(mod))
+  
+  # Create plot
+  p <- ggplot(data, aes(x = !!rlang::sym(loadings_name), y = !!rlang::sym(component_name))) +
+    geom_smooth(method = lm) +
+    geom_point(size = 4, aes(color = factor(Group, level = c("Control", "bvFTD", "CBS", "PSP")))) +
+    theme_light(base_size = 24) +
+    theme(plot.background = element_blank(), panel.grid = element_blank()) +
+    xlab(paste("Component", component_num, "synaptic density")) +
+    ylab(paste("Component", component_num, "connectivity")) +
+    labs(color = "Group") +
+    scale_color_manual(values = c("Control" = "#00BFC4", "bvFTD" = "#F8766D", "CBS" = "#7CAE00", "PSP" = "#C77CFF"))
+
+  return(list(mod_summary = tidy(mod), plot = p))
+}
+
+# Components to analyze
+components_to_analyze <- c(1, 2, 3, 4, 5, 6)
+
+# Store the results in a list
+results_list <- list()
+for (component_num in components_to_analyze) {
+  results_list[[component_num]] <- analyse_component_regression(components, component_num)
+}
+
+# FDR-adjusted p-values
+p_values_all <- c(0.170, 0.01072, 0.000406, 0.000182, 0.006382, 0.000477)
+p_values_patients <- c(0.3806, 0.02550, 0.00839, 0.0093, 0.03225, 0.0158)
+
+fdr_adjusted_p_values_all <- p.adjust(p_values_all, method = "fdr")
+fdr_adjusted_p_values_patients <- p.adjust(p_values_patients, method = "fdr")
+
+###contrasting with clinical scores/model selection####
+
+## stepwise regression
+# Filter data beforehand for better readability
+filtered_data <- subset(components, !Group == "Control" & !is.na(ACE_R_total))
+
+# Initial linear regression model
+mod <- lm(ACE_R_total ~ component1*loadings_ucbj_1 + component2*loadings_ucbj_2 +
+            component3*loadings_ucbj_3 + component4*loadings_ucbj_4 +
+            component5*loadings_ucbj_5 + component6*loadings_ucbj_6 +
+            dvars_mean + Age_at_fmri + Sex, data = filtered_data)
+
+# Smaller scope for stepwise selection
+lower <- lm(ACE_R_total ~ Age_at_fmri + Sex + dvars_mean, data = filtered_data)
+
+# Stepwise variable selection
+k <- log(length(filtered_data$SubID))
+selected_mod <- step(mod, scope = list(lower = lower, upper = mod), k = k)
+
+# Refine the model
+refined_mod <- lm(ACE_R_total ~ loadings_ucbj_2 + dvars_mean + Age_at_fmri + 
+                   Sex + component4*loadings_ucbj_4 + component5*loadings_ucbj_5,
+                   data = filtered_data)
+
+# Create a scatter plot
+ggplot(data = filtered_data, aes(x = predict(refined_mod), y = ACE_R_total)) +
+  geom_smooth(method = lm) +
+  geom_point(size = 4, aes(color = Group)) +
+  theme_light(base_size = 24) +
+  theme(plot.background = element_blank(), panel.grid = element_blank()) +
+  annotate("label", x = 65, y = 125, label = "Final model:\n ACE-R total ~ UCB-J 2 + UCB-J 4 * fMRI 4 \n+ UCB-J 5 * fMRI 5", size = 6) +
+  xlab("Fitted ACE-R total") +
+  ylab("ACE-R total") +
+  ylim(0, 140) +
+  labs(color = "Group")
+
+
+# Function to create and customize prediction plots
+create_prediction_plot <- function(predictor, component, x_label, label_x, label_y, label_text, std_beta, p_value) {
+  pred <- ggpredict(refined_mod, terms = c(predictor, component))
+  
+  plot(pred, ci.style = "ribbon", alpha = 0.1) +
+    geom_line() +
+    theme_light(base_size = 24) +
+    theme(plot.background = element_blank(), panel.grid = element_blank()) +
+    ylab("ACE-R total") +
+    ggtitle("Predicted ACE-R") +
+    labs(color = component) +
+    xlab(x_label) +
+    annotate("label", x = label_x, y = label_y, label = label_text, size = 6) +
+    scale_color_brewer(palette = "Set1", labels = c("-1 SD", "Mean", "+1 SD"))
+}
+
+# Create and customize prediction plot for component 4
+create_prediction_plot("loadings_ucbj_4", "component4", "UCBJ 4",
+                       -0.05, 95, "UCBJ 4 x fMRI 4 Interaction \n Std Beta 0.28 p = 0.005",
+                       0.28, 0.005)
+
+# Create and customize prediction plot for component 5
+create_prediction_plot("loadings_ucbj_5", "component5", "UCBJ 5",
+                       0.025, 95, "UCBJ 5 x fMRI 5 Interaction \n Std Beta 0.18 p = 0.053",
+                       0.18, 0.053)
+
+
+#####repeat for the PSPRS
+
+# Filter data for readability
+filtered_data <- subset(components, !is.na(PSPRS_total))
+
+# Initial linear regression model
+mod <- lm(PSPRS_total ~ component1*loadings_ucbj_1 + component2*loadings_ucbj_2 +
+            component3*loadings_ucbj_3 + component4*loadings_ucbj_4 +
+            component5*loadings_ucbj_5 + component6*loadings_ucbj_6 +
+            dvars_mean + Age_at_fmri + Sex, data = filtered_data)
+
+# Calculate 'k' for stepwise selection
+k <- as.numeric(summary(!is.na(components$PSPRS_total) == TRUE)[3])
+
+# Lower model
+lower <- lm(PSPRS_total ~ Age_at_fmri + Sex + dvars_mean, data = filtered_data)
+
+# Stepwise variable selection
+selected_mod <- step(mod, scope = list(lower = lower, upper = mod), k = log(k))
+
+# Refine the model
+refined_mod <- lm(PSPRS_total ~ loadings_ucbj_1 + dvars_mean + Age_at_fmri +
+                    Sex + component5*loadings_ucbj_5,
+                    data = filtered_data)
+
+# Create scatter plot for PSPRS
+ggplot(data = filtered_data, aes(x = predict(refined_mod), y = PSPRS_total)) +
+  geom_smooth(method = lm) +
+  geom_point(size = 4, aes(color = Group)) +
+  theme_light(base_size = 24) +
+  theme(plot.background = element_blank(), panel.grid = element_blank()) +
+  annotate("label", x = 25, y = 60, label = "Final model:\n PSPRS ~ UCB-J 1 \n+ UCB-J 5 * fMRI 5", size = 6) +
+  xlab("Fitted PSPRS total") +
+  ylab("PSPRS total") +
+  ylim(0, 80) +
+  labs(color = "Group")
+
+
+
+##predicted component 5
+# Function to create and customize prediction plots
+create_prediction_plot <- function(predictor, component, x_label, label_x, label_y, label_text, std_beta, p_value) {
+  pred <- ggpredict(mod, terms = c(predictor, component))
+  
+  plot(pred, ci.style = "ribbon", alpha = 0.05) +
+    geom_line() +
+    theme_light(base_size = 24) +
+    theme(plot.background = element_blank(), panel.grid = element_blank()) +
+    ylab("PSPRS total") +
+    ggtitle("Predicted PSPRS") +
+    labs(color = component) +
+    xlab(x_label) +
+    annotate("label", x = label_x, y = label_y, label = label_text, size = 6) +
+    scale_color_brewer(palette = "Set1", labels = c("-1 SD", "Mean", "+1 SD"))
+}
+
+# Create and customize prediction plot for component 2
+create_prediction_plot("loadings_ucbj_5", "component5", "UCBJ 5",
+                       -0.05, 60, "UCBJ 5 x fMRI 5 Interaction \n Std Beta -0.22 p = 0.048",
+                       -0.22, 0.048)
+
+
+
+##within and outside component
+summary(lm(ACE_R_total ~ component4_outside*loadings_ucbj_4 +dvars_mean+Age_at_fmri +Sex, data=subset(components, !Group=="Control")))
+summary(lm(PSPRS_total ~ component5_outside*loadings_ucbj_5 +dvars_mean+Age_at_fmri +Sex, data=subset(components, !Group=="Control")))
+
+
+
+###ucbj components post spatial regression of grey matter maps
+a1 <- numeric(6)
+
+# Compute correlations and store them in the vector
+a1[1] <- cor(components$loadings_ucbj_1, components$ucbj1_res)
+a1[2] <- cor(components$loadings_ucbj_2, components$ucbj2_res)
+a1[3] <- cor(components$loadings_ucbj_3, components$ucbj3_res)
+a1[4] <- cor(components$loadings_ucbj_4, components$ucbj4_res)
+a1[5] <- cor(components$loadings_ucbj_5, components$ucbj5_res)
+a1[6] <- cor(components$loadings_ucbj_6, components$ucbj6_res)
+
+# Calculate the average absolute correlation
+average_abs_correlation <- sum(abs(a1)) / 6
+
+# Print the result
+average_abs_correlation
+
+##boxplots for components of interest
+#component 1
+mod=lm(ucbj1_res~Group+Age_at_fmri+Sex, data=components)
+car::Anova(mod)
+emmeans::emmeans(mod, list(pairwise~Group), adjust="tukey")
+ggplot(data=components, aes(x=factor(Group, level=c("Control", "bvFTD", "CBS", "PSP")), y=ucbj1_res))+geom_boxplot(aes(fill=Group))+ylab("UCBJ Component 1 synaptic density") +theme_light(base_size=24)+theme(plot.background = element_blank(), panel.grid = element_blank(), legend.position = "none") +geom_signif(y_position = c(0.14), xmin=c(0.8), xmax=c(4.2), annotations = c("***")) +xlab("Group")
+
+#component 2
+mod=lm(ucbj2_res~Group+Age_at_fmri+Sex, data=components)
+car::Anova(mod)
+emmeans::emmeans(mod, list(pairwise~Group), adjust="tukey")
+ggplot(data=components, aes(x=factor(Group, level=c("Control", "bvFTD", "CBS", "PSP")), y=ucbj2_res))+geom_boxplot(aes(fill=Group))+ylab("UCBJ Component 2 synaptic density") +theme_light(base_size=24)+theme(plot.background = element_blank(), panel.grid = element_blank(), legend.position = "none")  +geom_signif(y_position = c(0.05), xmin=c(0.8), xmax=c(2.2), annotations = c("*")) +xlab("Group")+geom_signif(y_position = c(0.07), xmin=c(2.8), xmax=c(4.2), annotations = c("*"))
+
+#component 3
+mod=lm(-ucbj3_res~Group+Age_at_fmri+Sex, data=components)
+car::Anova(mod)
+emmeans::emmeans(mod, list(pairwise~Group), adjust="tukey")
+ggplot(data=components, aes(x=factor(Group, level=c("Control", "bvFTD", "CBS", "PSP")), y=-ucbj3_res))+geom_boxplot(aes(fill=Group))+ylab("UCBJ Component 3 synaptic density") +theme_light(base_size=24)+theme(plot.background = element_blank(), panel.grid = element_blank(), legend.position = "none") +geom_signif(y_position = c(0.13), xmin=c(0.8), xmax=c(2.2), annotations = c("***")) + geom_signif(y_position = c(0.15), xmin=c(1.8), xmax=c(4.2), annotations = c("*")) + geom_signif(y_position = c(0.19), xmin=c(1.8), xmax=c(3.2), annotations = c("**"))+ geom_signif(y_position = c(0.17), xmin=c(0.8), xmax=c(4.2), annotations = c("*")) +xlab("Group")
+
+
+##component 4
+mod=lm(ucbj4_res~Group+Age_at_fmri+Sex, data=components)
+car::Anova(mod)
+emmeans::emmeans(mod, list(pairwise~Group), adjust="tukey")
+ggplot(data=components, aes(x=factor(Group, level=c("Control", "bvFTD", "CBS", "PSP")), y=ucbj4_res))+geom_boxplot(aes(fill=Group))+ylab("UCBJ Component 4 synaptic density") +theme_light(base_size=24)+theme(plot.background = element_blank(), panel.grid = element_blank(), legend.position = "none") +geom_signif(y_position = c(0.02), xmin=c(0.8), xmax=c(2.2), annotations = c("**")) + geom_signif(y_position = c(0.06), xmin=c(1.8), xmax=c(4.2), annotations = c("**")) + geom_signif(y_position = c(0.04), xmin=c(1.8), xmax=c(3.2), annotations = c("**")) +xlab("Group")
+
+#component 5
+mod=lm(ucbj5_res~Group+Age_at_fmri+Sex, data=components)
+car::Anova(mod)
+emmeans::emmeans(mod, list(pairwise~Group), adjust="tukey")
+ggplot(data=components, aes(x=factor(Group, level=c("Control", "bvFTD", "CBS", "PSP")), y=ucbj5_res))+geom_boxplot(aes(fill=Group))+ylab("UCBJ Component 5 synaptic density") +theme_light(base_size=24)+theme(plot.background = element_blank(), panel.grid = element_blank(), legend.position = "none") +geom_signif(y_position = c(0.05), xmin=c(0.8), xmax=c(2.2), annotations = c("***")) + geom_signif(y_position = c(0.07), xmin=c(1.8), xmax=c(3.2), annotations = c("**"))+ geom_signif(y_position = c(0.11), xmin=c(0.8), xmax=c(4.2), annotations = c("***")) +xlab("Group") + geom_signif(y_position = c(0.09), xmin=c(1.8), xmax=c(4.2), annotations = c("*"))+ geom_signif(y_position = c(0.13), xmin=c(0.8), xmax=c(3.2), annotations = c("*"))
+
+#component 6
+mod=lm(ucbj6_res~Group+Age_at_fmri+Sex, data=components)
+car::Anova(mod)
+emmeans::emmeans(mod, list(pairwise~Group), adjust="tukey")
+ggplot(data=components, aes(x=factor(Group, level=c("Control", "bvFTD", "CBS", "PSP")), y=ucbj6_res))+geom_boxplot(aes(fill=Group))+ylab("UCBJ Component 6 synaptic density") +theme_light(base_size=24)+theme(plot.background = element_blank(), panel.grid = element_blank(), legend.position="none") +geom_signif(y_position = c(0.04), xmin=c(0.8), xmax=c(2.2), annotations = c("**")) +geom_signif(y_position = c(0.06), xmin=c(0.8), xmax=c(4.2), annotations = c("***")) +xlab("Group")
+
+```
+
