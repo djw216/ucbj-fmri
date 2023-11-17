@@ -163,7 +163,7 @@ ggplot(data = filtered_data, aes(x = predict(refined_mod), y = ACE_R_total)) +
 create_prediction_plot <- function(predictor, component, x_label, label_x, label_y, label_text, std_beta, p_value) {
   pred <- ggpredict(refined_mod, terms = c(predictor, component))
   
-  plot(pred, ci.style = "ribbon", alpha = 0.1) +
+  plot(pred, ci.style = "ribbon", alpha = 0.05) +
     geom_line() +
     theme_light(base_size = 24) +
     theme(plot.background = element_blank(), panel.grid = element_blank()) +
